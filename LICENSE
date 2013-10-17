@@ -1,0 +1,11 @@
+This software (ED060SC4 E-ink driver) is released into public domain.
+You can modify, use and relicense this software in any way you want.
+
+2013 Petteri Aimonen <jpa@eink.mail.kapsi.fi>
+
+--
+
+Note that these files have been designed to work with µGFX graphics
+framework, but they have been written from stratch and do not fall
+under the µGFX license. It should be easy enough to adapt them for
+other systems.
