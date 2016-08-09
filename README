@@ -1,71 +1,71 @@
-1. ����
+﻿1. 介绍
 
-����Ԫ̫ED060SC4 800*600 īˮ����������������������ڵ�Ƭ��ֱ��������Ļ�ģ���֧�ִ��п���IC����Ļ��
+这是元太ED060SC4 800*600 墨水屏驱动。这个驱动是适用在单片机直接连接屏幕的，不支持带有控制IC的屏幕。
 
-Ҫʹ�������������Ҫ��Ƭ���ܿ���������źţ�
+要使用这个驱动，需要单片机能控制下面的信号：
 
-Gate ����: SPV, CKV, GMODE.
-Source ����: CL, LE, OE, SPH, D0-D7.
-��Դ: +-15V, +22V, -20V, digital Vdd
+Gate 驱动: SPV, CKV, GMODE.
+Source 驱动: CL, LE, OE, SPH, D0-D7.
+电源: +-15V, +22V, -20V, digital Vdd
 
-"example_schematics.png"����ǵ�·ԭ��ͼ���������ED060SC4�����ӡ���Դ��·��
-ʹ�õ���STM32L151��Ƭ����
+"example_schematics.png"这个是电路原理图，里面介绍ED060SC4的连接、电源电路、
+使用的是STM32L151单片机。
 
-��Ҫע��������Ļ������800*600)�ɶ��������gate�����ź���ɡ�����ԭ��ͼ����ľջ�����
+需要注意更大的屏幕（比如800*600)由多个独立的gate驱动信号组成。就像原理图里面的菊花链。
 
-���ڸ���īˮ������Ϣ
+关于更多墨水屏的信息
 http://essentialscrap.com/eink/
 
 
 
-2. ֡����������
+2. 帧缓冲器仿真
 
-��Ϊ��Ƭ��û���㹻���ڴ�������������棬����������洢�����ڴ��е�֡��
-������֡������EINK_NUMBUFFERS������У�֮������д����Ļ��
-����ĺ궨������Ż�������С����ֵ���󽫻����д�����ݲ�����Ҫ������ڴ档
+因为单片机没有足够的内存来储存这个画面，这个驱动仿真储存在内存中的帧。
+驱动将帧缓冲在EINK_NUMBUFFERS缓冲块中，之后将数据写入屏幕。
+下面的宏定义控制着缓冲区大小。数值更大将会提高写的数据并且需要更多的内存。
 
-#define EINK_BLOCKWIDTH 20    // ������һ����Ŀ���
-#define EINK_BLOCKHEIGHT 20   // ������һ����ĸ߶�
-#define EINK_NUMBUFFERS 40    // �������������
+#define EINK_BLOCKWIDTH 20    // 缓冲区一个块的宽度
+#define EINK_BLOCKHEIGHT 20   // 缓冲区一个块的高度
+#define EINK_NUMBUFFERS 40    // 缓冲区块的数量
 
-��д��ͼ���ʹ������ĺ�����ˢ�»�������
+在写入图像后，使用下面的函数来刷新缓冲区：
 
     #include <ed060sc4.h>
     gdispControl(GDISP_CONTROL_FLUSH, 0);
 
-ʹ������ĺ����ر���ʾ��������Ҳ�����ˢ��
+使用下面的函数关闭显示屏缓冲区也会跟着刷新
 
     gdispSetPowerMode(powerOff);
 
 
 
-3. ������д�벨��
+3. 清屏和写入波形
 
 
-������������ʾ����ʱ���ǲ�֪��Ԫ̫�ٷ��Ĳ��Σ���Ҫ������ҵ���ܲ��ṫ���ġ�
-������Ҫʹ���෴�Ĳ���������ԭ���Ĳ���
+驱动在驱动显示屏的时候是不知道元太官方的波形，主要这是商业秘密不会公开的。
+驱动主要使用相反的波形来代替原来的波形
 
-����ĺ궨����������
+下面的宏定义跟波形相关
 
-#define EINK_BLINKCLEAR TRUE      // ������ȷ�෴����ɫ
-#define EINK_CLEARCOUNT 10        // ��������
-#define EINK_WRITECOUNT 4         // ˢ��ʱ����������
+#define EINK_BLINKCLEAR TRUE      // 首先明确相反的颜色
+#define EINK_CLEARCOUNT 10        // 清屏次数
+#define EINK_WRITECOUNT 4         // 刷新时的清屏次数
 
-����������д����������߶Աȶȣ����ǻή��ˢ���ٶȺ���߹���
-
-
-4. ʱ��Ƶ��
-
-��Ϊ������һλһλ����ʾ��ʱ��Ƶ�ʶ��ڵ�Ƭ����˵�ǳ���Ҫ��
-���ͨ��EINK_CLOCKDELAY����궨�������ơ�ͨ������������֤���50������ӳ١�
+增加清屏和写屏次数能提高对比度，但是会降低刷屏速度和提高功耗
 
 
-5. �������͵���Ļ֧��
+4. 时钟频率
 
-����������������󲿷ֵ�Ԫ̫��Ļ�����ǵ�ĿǰΪֹֻ������ED060SC4��
-��Ҫע������
+因为驱动是一位一位的显示，时钟频率对于单片机来说非常重要。
+这个通过EINK_CLOCKDELAY这个宏定义来控制。通过设置它来保证最短50纳秒的延迟。
 
-- һЩ��Ļʹ�õ���4λһ�����ص㡣��������Ǽ��赱ǰ��ĻΪ2λһ�����ص㡣
-- �������Ļ������Ҫ�����ľջ������ӣ�ԭ��ͼ��ʾ����
+
+5. 其他类型的屏幕支持
+
+这个驱动可以驱动大部分的元太屏幕，但是到目前为止只测试了ED060SC4。
+需要注意的事项：
+
+- 一些屏幕使用的是4位一个像素点。这个驱动是假设当前屏幕为2位一个像素点。
+- 更大的屏幕可能需要其他的菊花链连接，原理图有示例。
 
   
