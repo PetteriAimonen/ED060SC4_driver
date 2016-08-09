@@ -1,86 +1,71 @@
-1. Introduction
+﻿1. 介绍
 
-This is a driver for ED060SC4 800x600 e-ink display panel manufactured by
-Prime View. Note that this driver uses a direct connection to the panel from
-the processor; it does not use a separate controller chip between the processor
-and the panel.
+这是元太ED060SC4 800*600 墨水屏驱动。这个驱动是适用在单片机直接连接屏幕的，不支持带有控制IC的屏幕。
 
-To use the driver, you need to be able to control the following signals from
-your processor:
+要使用这个驱动，需要单片机能控制下面的信号：
 
-Gate driver: SPV, CKV, GMODE.
-Source driver: CL, LE, OE, SPH, D0-D7.
-Power supply: +-15V, +22V, -20V, digital Vdd
+Gate 驱动: SPV, CKV, GMODE.
+Source 驱动: CL, LE, OE, SPH, D0-D7.
+电源: +-15V, +22V, -20V, digital Vdd
 
-The file "example_schematics.png" shows how to connect the signals to e.g. a
-STM32L151 microcontroller. It also includes an example circuit for providing
-the panel supply voltages.
+"example_schematics.png"这个是电路原理图，里面介绍ED060SC4的连接、电源电路、
+使用的是STM32L151单片机。
 
-Note that the larger panels (such as the 800x600) consist of multiple segments
-with separate gate driver signals. These can be daisy chained as shown in the
-example schematic.
+需要注意更大的屏幕（比如800*600)由多个独立的gate驱动信号组成。就像原理图里面的菊花链。
 
-Please see here for more information on the panel:
+关于更多墨水屏的信息
 http://essentialscrap.com/eink/
 
 
-2. Frame buffer emulation
 
-Because there is not enough memory to store a full frame buffer on the
-processor, this driver emulates a frame buffer by storing the display data in
-blocks. It will buffer up to EINK_NUMBUFFERS blocks and then write them to the
-screen. The following #defines control the buffering. Larger numbers will
-result in faster drawing, but also use more RAM on the processor:
+2. 帧缓冲器仿真
 
-#define EINK_BLOCKWIDTH 20    // Width of a single block in buffer
-#define EINK_BLOCKHEIGHT 20   // Height of a single block in buffers
-#define EINK_NUMBUFFERS 40    // Number of blocks to buffer
+因为单片机没有足够的内存来储存这个画面，这个驱动仿真储存在内存中的帧。
+驱动将帧缓冲在EINK_NUMBUFFERS缓冲块中，之后将数据写入屏幕。
+下面的宏定义控制着缓冲区大小。数值更大将会提高写的数据并且需要更多的内存。
 
-After drawing your images, you should flush the buffers using the following
-command:
+#define EINK_BLOCKWIDTH 20    // 缓冲区一个块的宽度
+#define EINK_BLOCKHEIGHT 20   // 缓冲区一个块的高度
+#define EINK_NUMBUFFERS 40    // 缓冲区块的数量
+
+在写入图像后，使用下面的函数来刷新缓冲区：
 
     #include <ed060sc4.h>
     gdispControl(GDISP_CONTROL_FLUSH, 0);
 
-The buffers are also flushed whenever you turn the display off using:
+使用下面的函数关闭显示屏缓冲区也会跟着刷新
 
     gdispSetPowerMode(powerOff);
 
 
 
-3. Display clearing and writing waveforms
-
-This driver does not know the official Prime View waveforms for driving the
-display, mostly because those are trade secrets and not publicly available.
-Instead, it uses reverse engineered waveforms that are mostly functional.
-
-The following #defines control the waveforms:
-
-#define EINK_BLINKCLEAR TRUE      // Clear to opposite color first
-#define EINK_CLEARCOUNT 10        // Number of sweeps to clear the display
-#define EINK_WRITECOUNT 4         // Number of sweeps when writing to display
-
-Increasing the clearcount and writecount can improve contrast, but will also
-slow down the drawing and use more power.
+3. 清屏和写入波形
 
 
+驱动在驱动显示屏的时候是不知道元太官方的波形，主要这是商业秘密不会公开的。
+驱动主要使用相反的波形来代替原来的波形
 
-4. Clock speeds
+下面的宏定义跟波形相关
 
-Because the driver bit bangs the display, the clock frequency of the processor
-is quite significant. This is controlled by EINK_CLOCKDELAY variable. Set it
-so that the delay is atleast 50 nanoseconds.
+#define EINK_BLINKCLEAR TRUE      // 首先明确相反的颜色
+#define EINK_CLEARCOUNT 10        // 清屏次数
+#define EINK_WRITECOUNT 4         // 刷新时的清屏次数
+
+增加清屏和写屏次数能提高对比度，但是会降低刷屏速度和提高功耗
 
 
+4. 时钟频率
 
-5. Support for other kinds of panels
+因为驱动是一位一位的显示，时钟频率对于单片机来说非常重要。
+这个通过EINK_CLOCKDELAY这个宏定义来控制。通过设置它来保证最短50纳秒的延迟。
 
-Most of the Prime View panels should work using this driver, but only ED060SC4
-has been tested so far. Some points of consideration:
 
-- Some displays may use 4 bits per pixel. The driver currently assumes 2 bits
-  per pixel.
-- Larger displays may require some other way of daisy chaining than shown in
-  the example schematics.
+5. 其他类型的屏幕支持
+
+这个驱动可以驱动大部分的元太屏幕，但是到目前为止只测试了ED060SC4。
+需要注意的事项：
+
+- 一些屏幕使用的是4位一个像素点。这个驱动是假设当前屏幕为2位一个像素点。
+- 更大的屏幕可能需要其他的菊花链连接，原理图有示例。
 
   
